@@ -5,10 +5,10 @@ INC_PATH = -I/usr/local/include
 LIB_PATH = -L/usr/local/lib $(LIBS)
 
 FAST_SHARED_OBJS = hash.lo chain.lo shared_func.lo ini_file_reader.lo \
-                   logger.lo sockopt.lo fdfs_base64.lo sched_thread.lo \
-                   http_func.lo md5.lo pthread_func.lo \
+                   logger.lo sockopt.lo base64.lo sched_thread.lo \
+                   http_func.lo md5.lo pthread_func.lo
 
-HEADER_FILES = common_define.h hash.h chain.h logger.h fdfs_base64.h \
+HEADER_FILES = common_define.h hash.h chain.h logger.h base64.h \
                shared_func.h pthread_func.h ini_file_reader.h _os_bits.h \
                sockopt.h sched_thread.h http_func.h md5.h
 
