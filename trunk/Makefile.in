@@ -1,7 +1,7 @@
 .SUFFIXES: .c .o .lo
 
 COMPILE = $(CC) $(CFLAGS)
-INC_PATH = -I/usr/local/include
+INC_PATH = 
 LIB_PATH = -L/usr/local/lib $(LIBS)
 
 FAST_SHARED_OBJS = hash.lo chain.lo shared_func.lo ini_file_reader.lo \
