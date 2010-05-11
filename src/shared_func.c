@@ -495,7 +495,6 @@ void printBuffHex(const char *s, const int len)
 
 char *trim_left(char *pStr)
 {
-	char *pTemp;
 	char *p;
 	char *pEnd;
 	int nDestLen;
@@ -515,17 +514,8 @@ char *trim_left(char *pStr)
 	}
 	
 	nDestLen = (pEnd - p) + 1; //including \0
-	pTemp = (char *)malloc(nDestLen);
-	if (pTemp == NULL)
-	{
-		logError("file: "__FILE__", line: %d, " \
-			"malloc %d bytes fail", __LINE__, nDestLen);
-		return p;
-	}
+	memmove(pStr, p, nDestLen);
 
-	memcpy(pTemp, p, nDestLen);
-	memcpy(pStr, pTemp, nDestLen);
-	free(pTemp);
 	return pStr;
 }
 

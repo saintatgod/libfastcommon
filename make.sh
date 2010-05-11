@@ -46,7 +46,7 @@ else
  OFF_BITS=32
 fi
 
-cat <<EOF > _os_bits.h
+cat <<EOF > src/_os_bits.h
 #ifndef _OS_BITS_H
 #define _OS_BITS_H
 
@@ -89,6 +89,7 @@ else
   fi
 fi
 
+cd src
 cp Makefile.in Makefile
 perl -pi -e "s#\\\$\(CFLAGS\)#$CFLAGS#g" Makefile
 perl -pi -e "s#\\\$\(LIBS\)#$LIBS#g" Makefile
