@@ -1,7 +1,9 @@
 
-Version 1.1  2010-05-12
+Version 1.1  2010-05-15
   * source file move to directory src
   * header files add comments
+  * logger.h: correct function name from log_destory_ex to log_destroy_ex
+  * shared_func.h: getExeAbsolutePath change to getAbsolutePath
 
 Version 1.0  2010-05-08
   * first version
