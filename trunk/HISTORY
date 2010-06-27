@@ -1,4 +1,8 @@
 
+Version 1.2  2010-06-27
+  * sockopt.c: tcprecvfile and tcpdiscard add parameter total_recv_bytes
+  * sockopt.h add non-block connect function connectserverbyip_nb
+
 Version 1.1  2010-05-15
   * source file move to directory src
   * header files add comments
