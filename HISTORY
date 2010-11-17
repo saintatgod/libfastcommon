@@ -1,5 +1,8 @@
 
-Version 1.2  2010-07-02
+Version 1.03  2010-11-16
+  * add local ip functions local_ip_func.c
+
+Version 1.02  2010-07-02
   * sockopt.c: tcprecvfile and tcpdiscard add parameter total_recv_bytes
   * sockopt.h add non-block connect function connectserverbyip_nb
   * log_init set log to cache to false (no cache)
@@ -10,6 +13,6 @@ Version 1.1  2010-05-15
   * logger.h: correct function name from log_destory_ex to log_destroy_ex
   * shared_func.h: getExeAbsolutePath change to getAbsolutePath
 
-Version 1.0  2010-05-08
+Version 1.00  2010-05-08
   * first version
 
