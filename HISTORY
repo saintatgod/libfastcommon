@@ -1,4 +1,7 @@
 
+Version 1.04  2011-01-31
+  * update source code from FastDFS V2.08
+
 Version 1.03  2010-11-16
   * add local ip functions local_ip_func.c
 
