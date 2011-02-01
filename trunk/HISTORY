@@ -10,7 +10,7 @@ Version 1.02  2010-07-02
   * sockopt.h add non-block connect function connectserverbyip_nb
   * log_init set log to cache to false (no cache)
 
-Version 1.1  2010-05-15
+Version 1.01  2010-05-15
   * source file move to directory src
   * header files add comments
   * logger.h: correct function name from log_destory_ex to log_destroy_ex
