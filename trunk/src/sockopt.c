@@ -24,6 +24,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
+#include <ifaddrs.h>
 #include <sys/poll.h>
 #include <sys/select.h>
 #include "shared_func.h"
@@ -620,7 +621,8 @@ in_addr_t getIpaddrByName(const char *name, char *buff, const int bufferSize)
 	struct hostent *ent;
 	in_addr_t **addr_list;
 
-	if (inet_pton(AF_INET, name, &ip_addr) == 1)
+	if ((*name >= '0' && *name <= '9') && 
+		inet_pton(AF_INET, name, &ip_addr) == 1)
 	{
 		if (buff != NULL)
 		{
@@ -634,6 +636,7 @@ in_addr_t getIpaddrByName(const char *name, char *buff, const int bufferSize)
 	{
 		return INADDR_NONE;
 	}
+
         addr_list = (in_addr_t **)ent->h_addr_list;
 	if (addr_list[0] == NULL)
 	{
@@ -1507,6 +1510,123 @@ int tcpsetnodelay(int fd, const int timeout)
 	return 0;
 }
 
+int getlocaladdrs(char ip_addrs[][IP_ADDRESS_SIZE], \
+	const int max_count, int *count)
+{
+	int s;
+	struct ifconf ifconf;
+	struct ifreq ifr[32];
+	int if_count;
+	int i;
+	int result;
+
+	*count = 0;
+	s = socket(AF_INET, SOCK_STREAM, 0);
+	if (s < 0)
+	{
+		logError("file: "__FILE__", line: %d, " \
+			"socket create fail, errno: %d, error info: %s", \
+			__LINE__, errno, STRERROR(errno));
+		return errno != 0 ? errno : EMFILE;
+	}
+
+	ifconf.ifc_buf = (char *) ifr;
+	ifconf.ifc_len = sizeof(ifr);
+	if (ioctl(s, SIOCGIFCONF, &ifconf) < 0)
+	{
+		result = errno != 0 ? errno : EMFILE;
+		logError("file: "__FILE__", line: %d, " \
+			"call ioctl fail, errno: %d, error info: %s", \
+			__LINE__, result, STRERROR(result));
+ 		close(s);
+		return result;
+	}
+
+	if_count = ifconf.ifc_len / sizeof(ifr[0]);
+	if (max_count < if_count)
+	{
+		logError("file: "__FILE__", line: %d, " \
+			"max_count: %d < iterface count: %d", \
+			__LINE__, max_count, if_count);
+ 		close(s);
+		return ENOSPC;
+	}
+
+	for (i = 0; i < if_count; i++)
+	{
+		struct sockaddr_in *s_in;
+    		s_in = (struct sockaddr_in *) &ifr[i].ifr_addr;
+    		if (!inet_ntop(AF_INET, &s_in->sin_addr, \
+			ip_addrs[*count], IP_ADDRESS_SIZE))
+		{
+			result = errno != 0 ? errno : EMFILE;
+			logError("file: "__FILE__", line: %d, " \
+				"call inet_ntop fail, " \
+				"errno: %d, error info: %s", \
+				__LINE__, result, STRERROR(result));
+ 			close(s);
+			return result;
+    		}
+		(*count)++;
+	}
+
+	close(s);
+	return *count > 0 ? 0 : ENOENT;
+}
+
+int getlocaladdrs1(char ip_addrs[][IP_ADDRESS_SIZE], \
+	const int max_count, int *count)
+{
+	struct ifaddrs *ifc;
+	struct ifaddrs *ifc1;
+
+	*count = 0;
+	if (0 != getifaddrs(&ifc))
+	{
+		logError("file: "__FILE__", line: %d, " \
+			"call getifaddrs fail, " \
+			"errno: %d, error info: %s", \
+			__LINE__, errno, STRERROR(errno));
+		return errno != 0 ? errno : EMFILE;
+	}
+
+	ifc1 = ifc;
+	while (NULL != ifc)
+	{
+		struct sockaddr *s;
+		s = ifc->ifa_addr;
+		if (NULL != s && AF_INET == s->sa_family)
+		{
+			if (max_count <= *count)
+			{
+				logError("file: "__FILE__", line: %d, "\
+				"max_count: %d < iterface count: %d", \
+				__LINE__, max_count, *count);
+				freeifaddrs(ifc1);
+				return ENOSPC;
+			}
+
+			if (inet_ntop(AF_INET, &((struct sockaddr_in *)s)-> \
+			sin_addr, ip_addrs[*count], IP_ADDRESS_SIZE) != NULL)
+			{
+				(*count)++;
+			}
+			else
+			{
+				logWarning("file: "__FILE__", line: %d, " \
+					"call inet_ntop fail, " \
+					"errno: %d, error info: %s", \
+					__LINE__, errno, STRERROR(errno));
+			}
+		}
+
+		ifc = ifc->ifa_next;
+	}
+
+	freeifaddrs(ifc1);
+	return *count > 0 ? 0 : ENOENT;
+}
+
 int gethostaddrs(char **if_alias_prefixes, const int prefix_count, \
 	char ip_addrs[][IP_ADDRESS_SIZE], const int max_count, int *count)
 {
@@ -1523,17 +1643,13 @@ int gethostaddrs(char **if_alias_prefixes, const int prefix_count, \
 	int ret;
 
 	*count = 0;
-	sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (sock < 0)
-	{
-		logError("file: "__FILE__", line: %d, " \
-			"socket create failed, errno: %d, error info: %s.", \
-			__LINE__, errno, STRERROR(errno));
-		return errno != 0 ? errno : EMFILE;
-	}
-
 	if (prefix_count <= 0)
 	{
+		if (getlocaladdrs1(ip_addrs, max_count, count) == 0)
+		{
+			return 0;
+		}
+
 #ifdef OS_FREEBSD
 	#define IF_NAME_PREFIX    "bge"
 #else
@@ -1556,6 +1672,15 @@ int gethostaddrs(char **if_alias_prefixes, const int prefix_count, \
 	{
 		true_count = prefix_count;
 		true_alias_prefixes = if_alias_prefixes;
+	}
+
+	sock = socket(AF_INET, SOCK_STREAM, 0);
+	if (sock < 0)
+	{
+		logError("file: "__FILE__", line: %d, " \
+			"socket create failed, errno: %d, error info: %s.", \
+			__LINE__, errno, STRERROR(errno));
+		return errno != 0 ? errno : EMFILE;
 	}
 
 	for (i=0; i<true_count && *count<max_count; i++)
